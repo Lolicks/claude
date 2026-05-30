@@ -61,6 +61,9 @@ function e(string $s): string
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Админка — результаты теста 💌</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="results-body">
@@ -119,5 +122,6 @@ function e(string $s): string
     <?php endif; ?>
   </main>
 <?php endif; ?>
+  <script src="hearts.js"></script>
 </body>
 </html>
