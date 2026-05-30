@@ -36,6 +36,7 @@ const optionsEl = document.getElementById("options");
 const buttonsEl = document.getElementById("buttons");
 const resultEl = document.getElementById("result");
 const progressBar = document.getElementById("progressBar");
+const stepEl = document.getElementById("step");
 
 let current = 0;
 const answers = [];
@@ -45,10 +46,19 @@ function updateProgress() {
   progressBar.style.width = `${pct}%`;
 }
 
+// Перезапускает CSS-анимацию появления на элементе.
+function animateIn(el) {
+  el.classList.remove("anim-in");
+  void el.offsetWidth;
+  el.classList.add("anim-in");
+}
+
 function render() {
   updateProgress();
   const q = questions[current];
+  if (stepEl) stepEl.textContent = `Вопрос ${current + 1} из ${questions.length}`;
   questionEl.textContent = q.text;
+  animateIn(questionEl);
   optionsEl.innerHTML = "";
   buttonsEl.innerHTML = "";
   resultEl.hidden = true;
@@ -92,10 +102,11 @@ function renderYesNo() {
 }
 
 function renderChoice(q) {
-  q.options.forEach((opt) => {
+  q.options.forEach((opt, i) => {
     const btn = document.createElement("button");
-    btn.className = "btn btn-option";
+    btn.className = "btn btn-option opt-anim";
     btn.textContent = opt;
+    btn.style.animationDelay = `${i * 70}ms`;
     btn.addEventListener("click", () => choose(opt));
     optionsEl.appendChild(btn);
   });
@@ -112,14 +123,40 @@ function choose(answer) {
 }
 
 function finish() {
+  current = questions.length;
   updateProgress();
+  if (stepEl) stepEl.textContent = "Готово 💝";
   questionEl.textContent = "Спасибо, любимая! 🥰";
-  optionsEl.innerHTML = "";
+  animateIn(questionEl);
+  optionsEl.innerHTML = '<div class="heart-big">💖</div>';
   buttonsEl.innerHTML = "";
   resultEl.hidden = false;
   resultEl.innerHTML =
-    'Жду тебя в понедельник 💖<br>где я покажу тебе свою любовь';
+    "Жду тебя в понедельник 💖<br>где я покажу тебе свою любовь";
+  burstHearts();
   saveAttempt();
+}
+
+// Салют из сердечек по центру экрана.
+function burstHearts() {
+  const emojis = ["💖", "💕", "💗", "❤️", "✨", "💞"];
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  for (let i = 0; i < 26; i++) {
+    const h = document.createElement("span");
+    h.className = "burst-heart";
+    h.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 120 + Math.random() * 220;
+    h.style.left = `${cx}px`;
+    h.style.top = `${cy}px`;
+    h.style.fontSize = `${16 + Math.random() * 18}px`;
+    h.style.setProperty("--bx", `${Math.cos(angle) * dist}px`);
+    h.style.setProperty("--by", `${Math.sin(angle) * dist}px`);
+    h.style.animationDelay = `${Math.random() * 0.15}s`;
+    document.body.appendChild(h);
+    setTimeout(() => h.remove(), 1400);
+  }
 }
 
 // Отправляем попытку на сервер. Каждая отправка — отдельная попытка.
