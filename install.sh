@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Установка сайта-теста с входом по IP (без домена).
+# Установка сайта helpCisco с входом по IP (без домена).
 # Поднимает сайт как systemd-сервис на отдельном порту через встроенный PHP-сервер.
 # Не трогает занятые порты 80/443 — спокойно работает рядом с nginx/Apache/FastPanel.
 #
@@ -21,8 +21,8 @@ if [[ "${EUID}" -ne 0 ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WEBROOT="/var/www/love-test"
-SERVICE_NAME="love-test"
+WEBROOT="/var/www/helpcisco"
+SERVICE_NAME="helpcisco"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 RUN_USER="www-data"
 
@@ -49,7 +49,7 @@ if ! command -v php >/dev/null 2>&1; then
   apt-get update -y
   apt-get install -y php-cli php-mbstring
 else
-  # mbstring нужен для save.php; доустановим, если его нет.
+  # mbstring нужен для обработки текста (chat/posts/ai); доустановим, если его нет.
   if ! php -m | grep -qi '^mbstring$'; then
     apt-get update -y && apt-get install -y php-mbstring || true
   fi
@@ -65,16 +65,24 @@ fi
 
 # ---------- 4. Копируем файлы ----------
 log "Копирую сайт в ${WEBROOT}..."
-mkdir -p "${WEBROOT}"
+mkdir -p "${WEBROOT}/data"
+# Живые данные (посты и чат) не трогаем при переустановке — исключаем из --delete.
 rsync -a --delete \
   --exclude '.git' \
   --exclude '.gitignore' \
   --exclude '.claude' \
   --exclude 'install.sh' \
   --exclude 'README.md' \
-  --exclude 'data/attempts.json' \
+  --exclude 'data/posts.json' \
+  --exclude 'data/chat.json' \
   "${SCRIPT_DIR}/" "${WEBROOT}/"
-mkdir -p "${WEBROOT}/data"
+
+# Первичный посев демо-контента: только если файлов ещё нет (чтобы не затирать живые данные).
+for f in posts.json chat.json; do
+  if [[ ! -f "${WEBROOT}/data/${f}" && -f "${SCRIPT_DIR}/data/${f}" ]]; then
+    cp "${SCRIPT_DIR}/data/${f}" "${WEBROOT}/data/${f}"
+  fi
+done
 ok "Файлы на месте."
 
 # ---------- 5. Права ----------
@@ -89,7 +97,7 @@ ok "Папка data доступна для записи."
 log "Создаю сервис ${SERVICE_NAME}..."
 cat > "${SERVICE_FILE}" <<EOF
 [Unit]
-Description=Love Test (PHP built-in server)
+Description=helpCisco (PHP built-in server)
 After=network.target
 
 [Service]
@@ -98,6 +106,8 @@ User=${RUN_USER}
 Group=${RUN_USER}
 WorkingDirectory=${WEBROOT}
 Environment=PHP_CLI_SERVER_WORKERS=4
+# Необязательный файл с секретами, напр. HELPCISCO_AI_KEY=sk-... (ключ ИИ-поддержки).
+EnvironmentFile=-/etc/helpcisco.env
 ExecStart=${PHP_BIN} -S 0.0.0.0:${PORT} -t ${WEBROOT} ${WEBROOT}/router.php
 Restart=always
 RestartSec=3
@@ -129,10 +139,16 @@ PUBLIC_IP="$(curl -s -m 5 https://api.ipify.org 2>/dev/null || true)"
 
 # ---------- Готово ----------
 log "Готово! 🎉"
-echo "  Тест (для неё):     http://${PUBLIC_IP}:${PORT}/"
-echo "  Админка (для тебя): http://${PUBLIC_IP}:${PORT}/admin.php"
+echo "  Сайт:        http://${PUBLIC_IP}:${PORT}/"
+echo "  Модерация:   http://${PUBLIC_IP}:${PORT}/admin.php"
 echo
-err "Смени пароль админки: nano ${WEBROOT}/config.php  (по умолчанию 'changeme')"
+err "Смени пароль модерации и секретный ключ мануала: nano ${WEBROOT}/config.php"
+err "  (\$ADMIN_PASSWORD по умолчанию 'changeme', \$MANUAL_KEY по умолчанию 'ios-nat-2024')"
+echo
+echo "ИИ-поддержка: по умолчанию работает встроенный оффлайн-ассистент по NAT."
+echo "Чтобы отвечала реальная модель — задай ключ:"
+echo "  echo 'HELPCISCO_AI_KEY=ТВОЙ_КЛЮЧ' > /etc/helpcisco.env && systemctl restart ${SERVICE_NAME}"
+echo "  (провайдер и модель — в ${WEBROOT}/config.php: \$AI_PROVIDER / \$AI_MODEL)"
 echo
 echo "Управление сервисом:"
 echo "  systemctl status ${SERVICE_NAME}     # статус"
