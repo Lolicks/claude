@@ -62,59 +62,191 @@ function last_id(array $chat, string $room): int
     <a class="logo" href="index.php">help<span class="logo-accent">Cisco</span><!--
       --><sup class="logo-reg" id="secretLogo" title="">&reg;</sup></a>
     <nav class="topnav">
-      <a href="#guide">Гайд</a>
+      <a href="#guide">Статья</a>
+      <a href="#comments">Комментарии</a>
       <a href="#feed">Конфиги сообщества</a>
-      <a href="#live">Чат</a>
       <a href="#share">Поделиться</a>
     </nav>
   </header>
 
-  <!-- ===== Гайд (фасад: инструкция по настройке NAT) ===== -->
+  <!-- ===== Статья: что такое NAT и как его настроить ===== -->
   <section class="hero" id="guide">
     <div class="hero-inner">
-      <span class="eyebrow">Сообщество сетевиков</span>
-      <h1>Настройка NAT в Cisco IOL</h1>
+      <span class="eyebrow">Сообщество сетевиков · разбор</span>
+      <h1>Что такое NAT</h1>
       <p class="lead">
-        Пошаговый гайд и живая база конфигов от участников. Здесь люди выкладывают,
-        как они поднимали NAT в Cisco IOS / IOL, и обсуждают это прямо в комментариях.
+        NAT (Network Address Translation) — это преобразование сетевых адресов.
+        Технология позволяет множеству устройств локальной сети с «серыми» (приватными)
+        адресами выходить в интернет через один «белый» (публичный) IP.
       </p>
     </div>
 
-    <div class="guide-grid">
-      <article class="guide-step">
-        <span class="num">1</span>
-        <h3>Расставь роли интерфейсов</h3>
-        <p>Внутренняя сторона — <code>ip nat inside</code>, внешняя — <code>ip nat outside</code>.</p>
-        <pre class="config"><code>interface e0/0
- ip address 10.0.0.1 255.255.255.0
- ip nat inside
+    <article class="article">
+      <p>
+        Представьте офис: у провайдера вы покупаете один белый IP-адрес, а компьютеров
+        в офисе — десятки. Все они выходят в интернет через этот единственный адрес.
+        Роутер на границе сети подменяет внутренний (серый) адрес отправителя на свой
+        внешний (белый) и запоминает, кому вернуть ответ. Снаружи кажется, что в сеть
+        ходит один хост, хотя за ним скрывается вся локальная сеть.
+      </p>
+      <p>
+        Серые адреса (<code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>,
+        <code>192.168.0.0/16</code>) в интернете не маршрутизируются — они живут только
+        внутри локальных сетей. NAT работает «переводчиком» между ними и белыми адресами.
+      </p>
+
+      <h2 id="types">Виды NAT</h2>
+      <div class="nat-types">
+        <div class="nat-card">
+          <h3>Статический NAT</h3>
+          <p>Жёсткое соответствие один-к-одному: один серый адрес ↔ один белый.
+             Используют для проброса портов — например, чтобы снаружи зайти по RDP
+             на внутренний сервер.</p>
+        </div>
+        <div class="nat-card">
+          <h3>Динамический NAT</h3>
+          <p>Серый адрес получает любой свободный белый из заранее заданного пула.
+             Соответствие назначается на время сессии.</p>
+        </div>
+        <div class="nat-card">
+          <h3>Перегруженный (PAT)</h3>
+          <p>Port Address Translation, он же overload. Много серых адресов выходят
+             через один белый, а сессии различаются по номерам портов. Самый
+             распространённый вариант для офиса.</p>
+        </div>
+      </div>
+
+      <h2 id="lab">Настройка NAT на Cisco</h2>
+      <p>Соберём небольшой офис и поднимем PAT. Схема сети выглядит примерно так:</p>
+      <div class="schema-box">
+        <ul>
+          <li>3 ПК — во VLAN 2 (пользователи), сеть <code>192.168.2.0/24</code></li>
+          <li>Сервер — во VLAN 3, сеть <code>192.168.3.0/24</code></li>
+          <li>Коммутатор <b>Cisco Catalyst 2960</b> — раздаёт VLAN'ы по портам</li>
+          <li>Роутер <b>Cisco 1841</b> — маршрутизация между VLAN и выход наружу</li>
+        </ul>
+      </div>
+
+      <h3 class="cfg-title">Настройка коммутатора Cisco 2960</h3>
+      <p>Создаём два VLAN'а, раздаём порты по доступу и поднимаем транк до роутера.</p>
+      <pre class="config"><code>enable
+configure terminal
 !
-interface e0/1
- ip address 198.51.100.1 255.255.255.0
- ip nat outside</code></pre>
-      </article>
+vlan 2
+ name users
+vlan 3
+ name servers
+exit
+!
+interface range fa0/1 - 3
+ switchport mode access
+ switchport access vlan 2
+exit
+!
+interface fa0/4
+ switchport mode access
+ switchport access vlan 3
+exit
+!
+interface fa0/5
+ switchport mode trunk
+ switchport trunk allowed vlan 2,3
+exit</code></pre>
 
-      <article class="guide-step">
-        <span class="num">2</span>
-        <h3>Опиши, что транслировать (ACL)</h3>
-        <p>Какие внутренние адреса выпускаем наружу.</p>
-        <pre class="config"><code>access-list 1 permit 10.0.0.0 0.0.0.255</code></pre>
-      </article>
+      <h3 class="cfg-title">Настройка роутера Cisco 1841</h3>
+      <p>Router-on-a-stick: один физический интерфейс <code>fa0/0</code> делим на
+         подинтерфейсы — по одному на VLAN. Каждый становится шлюзом для своей сети.</p>
+      <pre class="config"><code>enable
+configure terminal
+!
+ip routing
+!
+interface fa0/0
+ no shutdown
+!
+interface fa0/0.2
+ encapsulation dot1Q 2
+ ip address 192.168.2.251 255.255.255.0
+!
+interface fa0/0.3
+ encapsulation dot1Q 3
+ ip address 192.168.3.251 255.255.255.0
+exit</code></pre>
+      <p>Теперь ПК из VLAN 2 указывают шлюзом <code>192.168.2.251</code>, сервер из
+         VLAN 3 — <code>192.168.3.251</code>, и сети уже видят друг друга.</p>
 
-      <article class="guide-step">
-        <span class="num">3</span>
-        <h3>Включи PAT (overload)</h3>
-        <p>Вся сеть выходит через один внешний адрес интерфейса.</p>
-        <pre class="config"><code>ip nat inside source list 1 interface e0/1 overload</code></pre>
-      </article>
+      <h2 id="pat">Настройка PAT</h2>
+      <p>Чтобы офис вышел в «интернет», эмулируем провайдера отдельным роутером.
+         Между нами и провайдером — стык на белых адресах с маской <code>/30</code>.</p>
+      <div class="schema-box">
+        <ul>
+          <li>Роутер провайдера: <code>fa0/0 — 213.235.1.1/30</code>,
+              <code>fa0/1 — 213.235.1.25/30</code></li>
+          <li>«Интернет»-сервер: <code>213.235.1.26</code>, шлюз <code>213.235.1.25</code></li>
+          <li>Наш Router0: <code>fa0/1 — 213.235.1.2/30</code>,
+              маршрут по умолчанию на <code>213.235.1.1</code></li>
+        </ul>
+      </div>
+      <p>На нашем роутере размечаем интерфейсы (<code>inside</code> / <code>outside</code>),
+         задаём дефолтный маршрут, описываем внутренние сети в ACL и включаем overload.</p>
+      <pre class="config"><code>enable
+configure terminal
+!
+interface fa0/1
+ ip address 213.235.1.2 255.255.255.252
+ ip nat outside
+ no shutdown
+!
+interface fa0/0.2
+ ip nat inside
+interface fa0/0.3
+ ip nat inside
+exit
+!
+ip route 0.0.0.0 0.0.0.0 213.235.1.1
+!
+access-list 1 permit 192.168.2.0 0.0.0.255
+access-list 1 permit 192.168.3.0 0.0.0.255
+!
+ip nat inside source list 1 interface fa0/1 overload</code></pre>
 
-      <article class="guide-step">
-        <span class="num">4</span>
-        <h3>Проверь трансляции</h3>
-        <p>Убедись, что записи появляются.</p>
-        <pre class="config"><code>show ip nat translations
-show ip nat statistics</code></pre>
-      </article>
+      <h3 class="cfg-title">Проверка</h3>
+      <p>Пингуем «интернет»-сервер с компьютера из локальной сети — трафик уходит
+         через PAT и возвращается:</p>
+      <pre class="config"><code>PC&gt; ping 213.235.1.26
+
+Reply from 213.235.1.26: bytes=32 time=1ms  TTL=126
+Reply from 213.235.1.26: bytes=32 time&lt;1ms TTL=126
+Reply from 213.235.1.26: bytes=32 time&lt;1ms TTL=126
+Reply from 213.235.1.26: bytes=32 time&lt;1ms TTL=126
+
+Success rate is 100 percent (4/4)</code></pre>
+      <p>А на роутере видны сами трансляции — все внутренние адреса спрятаны за одним
+         белым <code>213.235.1.2</code>, сессии различаются по портам:</p>
+      <pre class="config"><code>Router0# show ip nat translations
+
+Pro Inside global      Inside local       Outside local      Outside global
+icmp 213.235.1.2:1     192.168.2.1:1      213.235.1.26:1     213.235.1.26:1
+icmp 213.235.1.2:2     192.168.2.2:2      213.235.1.26:2     213.235.1.26:2
+icmp 213.235.1.2:3     192.168.3.10:3     213.235.1.26:3     213.235.1.26:3</code></pre>
+    </article>
+  </section>
+
+  <!-- ===== Комментарии (на самом деле живой чат) ===== -->
+  <section class="live" id="comments">
+    <div class="section-head">
+      <h2>Комментарии</h2>
+      <p>Обсуждение статьи. Пишут все, кто сейчас на сайте — это живой чат в реальном времени.</p>
+    </div>
+    <div class="live-box">
+      <div class="chat-log live-log" data-room="global" data-last="<?= last_id($chat, 'global') ?>">
+        <?= render_messages($chat, 'global') ?>
+      </div>
+      <form class="chat-form" data-room="global">
+        <input class="chat-name" type="text" placeholder="имя" maxlength="40" autocomplete="off">
+        <input class="chat-text" type="text" placeholder="оставить комментарий…" maxlength="1000" autocomplete="off">
+        <button class="btn btn-send" type="submit">→</button>
+      </form>
     </div>
   </section>
 
@@ -185,24 +317,6 @@ show ip nat statistics</code></pre>
         <button class="btn btn-primary" type="submit">Опубликовать</button>
       </div>
     </form>
-  </section>
-
-  <!-- ===== Общий живой чат ===== -->
-  <section class="live" id="live">
-    <div class="section-head">
-      <h2>Живой чат сообщества</h2>
-      <p>Общий чат для всех, кто сейчас на сайте.</p>
-    </div>
-    <div class="live-box">
-      <div class="chat-log live-log" data-room="global" data-last="<?= last_id($chat, 'global') ?>">
-        <?= render_messages($chat, 'global') ?>
-      </div>
-      <form class="chat-form" data-room="global">
-        <input class="chat-name" type="text" placeholder="имя" maxlength="40" autocomplete="off">
-        <input class="chat-text" type="text" placeholder="сообщение в общий чат…" maxlength="1000" autocomplete="off">
-        <button class="btn btn-send" type="submit">→</button>
-      </form>
-    </div>
   </section>
 
   <footer class="footer">

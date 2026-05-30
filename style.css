@@ -123,6 +123,53 @@ h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 .5em; }
 .guide-step h3 { font-size: 16px; }
 .guide-step p { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
 
+/* ---------- Статья (разбор NAT) ---------- */
+.article { margin-top: 36px; max-width: 820px; }
+.article p { color: #d4ddec; margin: 0 0 16px; font-size: 16px; }
+.article h2 {
+  font-size: 26px;
+  margin: 42px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  scroll-margin-top: 80px;
+}
+.article .cfg-title {
+  font-size: 18px;
+  margin: 30px 0 10px;
+  color: var(--accent);
+}
+.article .config { margin: 0 0 18px; font-size: 13px; }
+.article code { background: rgba(47,182,255,.1); padding: 1px 6px; border-radius: 5px; font-size: 13px; }
+.article .config code { background: none; padding: 0; }
+
+.nat-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 0 0 8px;
+}
+.nat-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 18px 14px;
+  border-top: 3px solid var(--accent);
+}
+.nat-card h3 { font-size: 16px; color: var(--accent-2); }
+.nat-card p { font-size: 14px; color: var(--muted); margin: 0; }
+
+.schema-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-2);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin: 0 0 20px;
+}
+.schema-box ul { margin: 0; padding-left: 20px; }
+.schema-box li { color: #d4ddec; margin-bottom: 8px; font-size: 15px; }
+.schema-box li:last-child { margin-bottom: 0; }
+
 /* ---------- Блоки конфигов ---------- */
 .config {
   background: var(--code-bg);
