@@ -117,7 +117,8 @@ function finish() {
   optionsEl.innerHTML = "";
   buttonsEl.innerHTML = "";
   resultEl.hidden = false;
-  resultEl.innerHTML = "Твои ответы отправлены 💌";
+  resultEl.innerHTML =
+    'Жду тебя в понедельник 💖<br>где я покажу тебе свою любовь';
   saveAttempt();
 }
 
