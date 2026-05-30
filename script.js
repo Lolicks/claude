@@ -40,6 +40,7 @@ const stepEl = document.getElementById("step");
 
 let current = 0;
 const answers = [];
+let noCleanup = null; // снимает слушатели убегающей кнопки при смене вопроса
 
 function updateProgress() {
   const pct = (current / questions.length) * 100;
@@ -54,6 +55,10 @@ function animateIn(el) {
 }
 
 function render() {
+  if (noCleanup) {
+    noCleanup();
+    noCleanup = null;
+  }
   updateProgress();
   const q = questions[current];
   if (stepEl) stepEl.textContent = `Вопрос ${current + 1} из ${questions.length}`;
@@ -80,22 +85,89 @@ function renderYesNo() {
   noBtn.className = "btn btn-no";
   noBtn.textContent = "Нет";
 
-  // "Нет" нажать нельзя — кнопка убегает.
-  const runAway = (e) => {
-    if (e) e.preventDefault();
-    const padding = 20;
-    const maxX = window.innerWidth - noBtn.offsetWidth - padding;
-    const maxY = window.innerHeight - noBtn.offsetHeight - padding;
-    const x = Math.max(padding, Math.random() * maxX);
-    const y = Math.max(padding, Math.random() * maxY);
+  // Двигаем кнопку прочь от точки (px, py), оставаясь в пределах экрана — она убегает, но не пропадает.
+  function moveAwayFrom(px, py) {
+    const rect = noBtn.getBoundingClientRect();
+    const w = rect.width || 90;
+    const h = rect.height || 52;
+    const pad = 10;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    let cx = rect.left + w / 2;
+    let cy = rect.top + h / 2;
+
+    let dx = cx - px;
+    let dy = cy - py;
+    let dist = Math.hypot(dx, dy);
+    if (dist < 1) {
+      // Курсор прямо по центру — выберем случайное направление.
+      const a = Math.random() * Math.PI * 2;
+      dx = Math.cos(a);
+      dy = Math.sin(a);
+      dist = 1;
+    }
+
+    const step = 170;
+    let nx = cx + (dx / dist) * step;
+    let ny = cy + (dy / dist) * step;
+
+    const minX = w / 2 + pad;
+    const maxX = vw - w / 2 - pad;
+    const minY = h / 2 + pad;
+    const maxY = vh - h / 2 - pad;
+    nx = Math.min(maxX, Math.max(minX, nx));
+    ny = Math.min(maxY, Math.max(minY, ny));
+
+    // Если кнопку «зажали» в угол — телепортируем в случайную точку экрана.
+    if (Math.hypot(nx - cx, ny - cy) < 12) {
+      nx = Math.random() * (maxX - minX) + minX;
+      ny = Math.random() * (maxY - minY) + minY;
+    }
+
     noBtn.style.position = "fixed";
-    noBtn.style.left = `${x}px`;
-    noBtn.style.top = `${y}px`;
+    noBtn.style.margin = "0";
+    noBtn.style.width = "auto"; // на телефоне кнопка не на всю ширину, когда бегает
+    noBtn.style.left = `${nx - w / 2}px`;
+    noBtn.style.top = `${ny - h / 2}px`;
+  }
+
+  // Десктоп: убегает, когда курсор подбирается близко.
+  const onMouseMove = (e) => {
+    if (!document.body.contains(noBtn)) return;
+    const rect = noBtn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    if (Math.hypot(cx - e.clientX, cy - e.clientY) < 130) {
+      moveAwayFrom(e.clientX, e.clientY);
+    }
   };
-  noBtn.addEventListener("mouseover", runAway);
-  noBtn.addEventListener("mousedown", runAway);
-  noBtn.addEventListener("touchstart", runAway, { passive: false });
-  noBtn.addEventListener("click", runAway);
+  document.addEventListener("mousemove", onMouseMove);
+
+  // Телефон: на попытку тапнуть кнопка отпрыгивает (но остаётся видимой).
+  const dodgeTouch = (e) => {
+    e.preventDefault();
+    const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+    if (t) moveAwayFrom(t.clientX, t.clientY);
+    else {
+      const r = noBtn.getBoundingClientRect();
+      moveAwayFrom(r.left + r.width / 2, r.top + r.height / 2);
+    }
+  };
+  noBtn.addEventListener("touchstart", dodgeTouch, { passive: false });
+
+  // Подстраховка для любых указателей (мышь/стилус) и клика.
+  const dodgePointer = (e) => {
+    e.preventDefault();
+    moveAwayFrom(e.clientX, e.clientY);
+  };
+  noBtn.addEventListener("pointerdown", dodgePointer);
+  noBtn.addEventListener("click", (e) => e.preventDefault());
+
+  // Снятие слушателей при переходе к следующему вопросу.
+  noCleanup = () => {
+    document.removeEventListener("mousemove", onMouseMove);
+  };
 
   buttonsEl.appendChild(yesBtn);
   buttonsEl.appendChild(noBtn);

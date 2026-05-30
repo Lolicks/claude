@@ -26,8 +26,20 @@ SERVICE_NAME="love-test"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 RUN_USER="www-data"
 
-# ---------- 1. Порт ----------
-PORT="${PORT:-${1:-8080}}"
+# ---------- 1. Останавливаем старый сервис (если был) ----------
+# Делаем это ДО выбора порта, чтобы при обновлении сайт остался на том же порту.
+if systemctl list-unit-files | grep -q "^${SERVICE_NAME}.service"; then
+  systemctl stop "${SERVICE_NAME}" 2>/dev/null || true
+fi
+
+# Если сервис уже был установлен — переиспользуем его порт (обновление на месте).
+EXISTING_PORT=""
+if [[ -f "${SERVICE_FILE}" ]]; then
+  EXISTING_PORT="$(grep -oE '0\.0\.0\.0:[0-9]+' "${SERVICE_FILE}" 2>/dev/null | head -n1 | cut -d: -f2 || true)"
+fi
+
+# ---------- 2. Порт ----------
+PORT="${PORT:-${1:-${EXISTING_PORT:-8080}}}"
 
 port_taken() {
   ss -tlnH 2>/dev/null | awk '{n=split($4,a,":"); print a[n]}' | grep -qx "$1"
@@ -42,7 +54,7 @@ if [[ "${PORT}" != "${REQUESTED}" ]]; then
 fi
 log "Сайт будет на порту ${PORT}"
 
-# ---------- 2. PHP ----------
+# ---------- 3. PHP ----------
 log "Проверяю PHP..."
 export DEBIAN_FRONTEND=noninteractive
 if ! command -v php >/dev/null 2>&1; then
@@ -57,11 +69,6 @@ fi
 command -v rsync >/dev/null 2>&1 || apt-get install -y rsync
 PHP_BIN="$(command -v php)"
 ok "PHP: ${PHP_BIN} ($(php -r 'echo PHP_VERSION;'))"
-
-# ---------- 3. Останавливаем старый сервис (если был) ----------
-if systemctl list-unit-files | grep -q "^${SERVICE_NAME}.service"; then
-  systemctl stop "${SERVICE_NAME}" 2>/dev/null || true
-fi
 
 # ---------- 4. Копируем файлы ----------
 log "Копирую сайт в ${WEBROOT}..."
