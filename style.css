@@ -200,9 +200,7 @@ code { color: var(--accent-2); }
 .post-author { color: var(--accent); font-weight: 600; }
 .post-desc { color: #c4cee0; margin: 12px 0 14px; }
 
-/* ---------- Комментарии-чат под постом ---------- */
-.comments { margin-top: 18px; border-top: 1px dashed var(--border); padding-top: 14px; }
-.comments-title { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+/* ---------- Лента сообщений комментариев ---------- */
 .chat-log {
   display: flex;
   flex-direction: column;
@@ -228,17 +226,9 @@ code { color: var(--accent-2); }
 .msg-text { color: var(--text); word-break: break-word; }
 .msg-time { color: var(--muted); font-size: 11px; white-space: nowrap; }
 
-/* ---------- Формы чата ---------- */
-.chat-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.chat-name { flex: 0 0 130px; }
+/* ---------- Форма комментариев ---------- */
+.chat-form { display: flex; gap: 8px; align-items: center; }
 .chat-text { flex: 1; min-width: 0; }
-
-/* Имя задаётся один раз: задал — поле прячется, остаётся «Вы: ник · сменить». */
-.chat-as { display: none; flex: 0 0 100%; font-size: 12px; color: var(--muted); }
-.chat-form.named .chat-as { display: block; }
-.chat-form.named .chat-name { display: none; }
-.chat-as b { color: var(--accent); font-weight: 600; }
-.chat-as-edit { color: var(--accent-2); }
 .chat-form input,
 .share-form input,
 .share-form textarea,

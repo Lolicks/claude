@@ -25,7 +25,7 @@ function render_messages(array $chat, string $room): string
   $list = isset($chat[$room]) && is_array($chat[$room]) ? $chat[$room] : [];
   $html = '';
   foreach ($list as $m) {
-    $name = e((string) ($m['name'] ?? 'аноним'));
+    $name = 'аноним'; // все сообщения анонимны
     $text = nl2br(e((string) ($m['text'] ?? '')));
     $time = e(fmt_date((string) ($m['date'] ?? '')));
     $id   = (int) ($m['id'] ?? 0);
@@ -236,15 +236,14 @@ icmp 213.235.1.2:3     192.168.3.10:3     213.235.1.26:3     213.235.1.26:3</cod
   <section class="live" id="comments">
     <div class="section-head">
       <h2>Комментарии</h2>
-      <p>Обсуждение статьи. Пишут все, кто сейчас на сайте — это живой чат в реальном времени.</p>
+      <p>Пишите комментарии — их сразу видят все, кто на сайте. Всё анонимно, имя не нужно.</p>
     </div>
     <div class="live-box">
       <div class="chat-log live-log" data-room="global" data-last="<?= last_id($chat, 'global') ?>">
         <?= render_messages($chat, 'global') ?>
       </div>
       <form class="chat-form" data-room="global">
-        <input class="chat-name" type="text" placeholder="имя" maxlength="40" autocomplete="off">
-        <input class="chat-text" type="text" placeholder="оставить комментарий…" maxlength="1000" autocomplete="off">
+        <input class="chat-text" type="text" placeholder="написать комментарий…" maxlength="1000" autocomplete="off">
         <button class="btn btn-send" type="submit">→</button>
       </form>
     </div>
@@ -254,18 +253,15 @@ icmp 213.235.1.2:3     192.168.3.10:3     213.235.1.26:3     213.235.1.26:3</cod
   <section class="feed" id="feed">
     <div class="section-head">
       <h2>Конфиги сообщества</h2>
-      <p>Как настраивали NAT другие участники. Обсуждай в комментариях — это живой чат под каждым постом.</p>
+      <p>Как настраивали NAT другие участники.</p>
     </div>
 
     <div class="posts" id="posts">
       <?php if (count($posts) === 0): ?>
         <p class="empty">Пока никто не поделился конфигом. Будь первым ниже 👇</p>
       <?php else: ?>
-        <?php foreach (array_reverse($posts) as $post):
-          $id = (string) ($post['id'] ?? '');
-          $room = 'post-' . $id;
-        ?>
-          <article class="post" data-room="<?= e($room) ?>">
+        <?php foreach (array_reverse($posts) as $post): ?>
+          <article class="post">
             <header class="post-head">
               <div>
                 <h3 class="post-title"><?= e((string) ($post['title'] ?? '')) ?></h3>
@@ -281,18 +277,6 @@ icmp 213.235.1.2:3     192.168.3.10:3     213.235.1.26:3     213.235.1.26:3</cod
             <?php endif; ?>
 
             <pre class="config"><code><?= e((string) ($post['config'] ?? '')) ?></code></pre>
-
-            <div class="comments">
-              <h4 class="comments-title">Обсуждение</h4>
-              <div class="chat-log" data-room="<?= e($room) ?>" data-last="<?= last_id($chat, $room) ?>">
-                <?= render_messages($chat, $room) ?>
-              </div>
-              <form class="chat-form" data-room="<?= e($room) ?>">
-                <input class="chat-name" type="text" placeholder="имя" maxlength="40" autocomplete="off">
-                <input class="chat-text" type="text" placeholder="написать в обсуждение…" maxlength="1000" autocomplete="off">
-                <button class="btn btn-send" type="submit">→</button>
-              </form>
-            </div>
           </article>
         <?php endforeach; ?>
       <?php endif; ?>
