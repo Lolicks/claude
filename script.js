@@ -25,11 +25,40 @@ function getNick() {
 function setNick(name) {
   if (name) localStorage.setItem(NICK_KEY, name);
 }
-function applyNickToInputs() {
+
+// Имя задаётся один раз. Пока ника нет — показываем поле имени;
+// как только он задан — прячем поле и пишем только текст (как в обычном чате).
+function applyNickUI() {
   const nick = getNick();
-  if (!nick) return;
-  document.querySelectorAll('.chat-name').forEach((inp) => {
-    if (!inp.value) inp.value = nick;
+  document.querySelectorAll('.chat-form').forEach((form) => {
+    const nameInput = form.querySelector('.chat-name');
+    if (!nameInput) return;
+
+    let chip = form.querySelector('.chat-as');
+    if (!chip) {
+      chip = document.createElement('div');
+      chip.className = 'chat-as';
+      nameInput.parentNode.insertBefore(chip, nameInput);
+      chip.addEventListener('click', (e) => {
+        const t = e.target;
+        if (t && t.classList && t.classList.contains('chat-as-edit')) {
+          e.preventDefault();
+          form.classList.remove('named');
+          nameInput.value = '';
+          nameInput.focus();
+        }
+      });
+    }
+
+    if (nick) {
+      nameInput.value = nick;
+      form.classList.add('named');
+      chip.innerHTML = 'Вы: <b>' + esc(nick) + '</b> · ' +
+        '<a href="#" class="chat-as-edit">сменить имя</a>';
+    } else {
+      form.classList.remove('named');
+      chip.textContent = '';
+    }
   });
 }
 
@@ -79,10 +108,21 @@ async function sendChat(form) {
   const textInput = form.querySelector('.chat-text');
   const text = textInput.value.trim();
   if (!text) return;
-  const name = (nameInput.value.trim() || getNick() || 'аноним');
+
+  // Имя нужно задать один раз. Нет имени — просим ввести и не отправляем.
+  let name = (nameInput && nameInput.value.trim()) || getNick();
+  if (!name) {
+    if (nameInput) {
+      form.classList.remove('named');
+      nameInput.focus();
+    }
+    return;
+  }
   setNick(name);
+  applyNickUI();
 
   textInput.value = '';
+  const log = document.querySelector(`.chat-log[data-room="${CSS.escape(room)}"]`);
   try {
     const res = await fetch('chat.php', {
       method: 'POST',
@@ -91,12 +131,12 @@ async function sendChat(form) {
     });
     const data = await res.json();
     if (data.ok && data.message) {
-      const log = document.querySelector(`.chat-log[data-room="${CSS.escape(room)}"]`);
       if (log) {
-        appendMessage(log, data.message);
+        appendMessage(log, data.message);      // своё сообщение видно сразу
         log.dataset.last = data.message.id;
         log.scrollTop = log.scrollHeight;
       }
+      pollAllRooms(); // сразу подтянем и чужие свежие сообщения
     }
   } catch (_) {
     textInput.value = text; // вернём текст, если не отправилось
@@ -104,6 +144,7 @@ async function sendChat(form) {
 }
 
 function initChats() {
+  applyNickUI();
   document.querySelectorAll('.chat-form').forEach((form) => {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -115,7 +156,8 @@ function initChats() {
     log.scrollTop = log.scrollHeight;
   });
   pollAllRooms();
-  setInterval(pollAllRooms, 3500);
+  setInterval(pollAllRooms, 1500);          // частый опрос — чат «живой»
+  window.addEventListener('focus', pollAllRooms); // вернулись на вкладку — сразу обновим
 }
 
 // ======================= Публикация своего конфига =======================
@@ -271,7 +313,6 @@ function initHiddenTriggers() {
 // ======================= Старт =======================
 
 document.addEventListener('DOMContentLoaded', () => {
-  applyNickToInputs();
   initChats();
   initShare();
   initSupport();
