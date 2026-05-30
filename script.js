@@ -26,43 +26,7 @@ function setNick(name) {
   if (name) localStorage.setItem(NICK_KEY, name);
 }
 
-// Имя задаётся один раз. Пока ника нет — показываем поле имени;
-// как только он задан — прячем поле и пишем только текст (как в обычном чате).
-function applyNickUI() {
-  const nick = getNick();
-  document.querySelectorAll('.chat-form').forEach((form) => {
-    const nameInput = form.querySelector('.chat-name');
-    if (!nameInput) return;
-
-    let chip = form.querySelector('.chat-as');
-    if (!chip) {
-      chip = document.createElement('div');
-      chip.className = 'chat-as';
-      nameInput.parentNode.insertBefore(chip, nameInput);
-      chip.addEventListener('click', (e) => {
-        const t = e.target;
-        if (t && t.classList && t.classList.contains('chat-as-edit')) {
-          e.preventDefault();
-          form.classList.remove('named');
-          nameInput.value = '';
-          nameInput.focus();
-        }
-      });
-    }
-
-    if (nick) {
-      nameInput.value = nick;
-      form.classList.add('named');
-      chip.innerHTML = 'Вы: <b>' + esc(nick) + '</b> · ' +
-        '<a href="#" class="chat-as-edit">сменить имя</a>';
-    } else {
-      form.classList.remove('named');
-      chip.textContent = '';
-    }
-  });
-}
-
-// ======================= Чаты (общий + под каждым постом) =======================
+// ======================= Комментарии (анонимный живой чат) =======================
 
 function appendMessage(log, m) {
   if (log.querySelector(`.msg[data-id="${m.id}"]`)) return; // не дублируем
@@ -70,7 +34,7 @@ function appendMessage(log, m) {
   div.className = 'msg';
   div.dataset.id = m.id;
   div.innerHTML =
-    `<span class="msg-name">${esc(m.name)}</span>` +
+    `<span class="msg-name">аноним</span>` +
     `<span class="msg-text">${esc(m.text).replace(/\n/g, '<br>')}</span>` +
     `<span class="msg-time">${esc(fmtTime(m.date))}</span>`;
   log.appendChild(div);
@@ -104,39 +68,28 @@ function pollAllRooms() {
 
 async function sendChat(form) {
   const room = form.dataset.room;
-  const nameInput = form.querySelector('.chat-name');
   const textInput = form.querySelector('.chat-text');
   const text = textInput.value.trim();
   if (!text) return;
 
-  // Имя нужно задать один раз. Нет имени — просим ввести и не отправляем.
-  let name = (nameInput && nameInput.value.trim()) || getNick();
-  if (!name) {
-    if (nameInput) {
-      form.classList.remove('named');
-      nameInput.focus();
-    }
-    return;
-  }
-  setNick(name);
-  applyNickUI();
-
+  // Все пишут анонимно — имя не требуется.
   textInput.value = '';
+  textInput.focus();
   const log = document.querySelector(`.chat-log[data-room="${CSS.escape(room)}"]`);
   try {
     const res = await fetch('chat.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ room, name, text }),
+      body: JSON.stringify({ room, name: 'аноним', text }),
     });
     const data = await res.json();
     if (data.ok && data.message) {
       if (log) {
-        appendMessage(log, data.message);      // своё сообщение видно сразу
+        appendMessage(log, data.message);      // своё сообщение появляется сразу
         log.dataset.last = data.message.id;
         log.scrollTop = log.scrollHeight;
       }
-      pollAllRooms(); // сразу подтянем и чужие свежие сообщения
+      pollAllRooms(); // и чужие свежие сообщения подтянем тут же
     }
   } catch (_) {
     textInput.value = text; // вернём текст, если не отправилось
@@ -144,7 +97,6 @@ async function sendChat(form) {
 }
 
 function initChats() {
-  applyNickUI();
   document.querySelectorAll('.chat-form').forEach((form) => {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
