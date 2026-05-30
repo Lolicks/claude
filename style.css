@@ -113,16 +113,32 @@ body {
   animation: pop 0.4s ease;
 }
 
-.results-link {
-  display: block;
-  margin-top: 28px;
-  color: #b03a5b;
-  font-size: 0.95rem;
-  text-decoration: none;
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.results-link:hover {
-  text-decoration: underline;
+.login-input {
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 2px solid #ffd0e0;
+  font-size: 1.1rem;
+  outline: none;
+  text-align: center;
+}
+
+.login-input:focus {
+  border-color: #ff4d6d;
+}
+
+.count-badge {
+  align-self: center;
+  background: rgba(255, 255, 255, 0.85);
+  color: #d6336c;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 14px;
 }
 
 @keyframes pop {
