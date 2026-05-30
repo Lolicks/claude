@@ -31,8 +31,6 @@ const questions = [
   },
 ];
 
-const STORAGE_KEY = "loveQuizAttempts";
-
 const questionEl = document.getElementById("question");
 const optionsEl = document.getElementById("options");
 const buttonsEl = document.getElementById("buttons");
@@ -118,35 +116,25 @@ function finish() {
   questionEl.textContent = "Спасибо, любимая! 🥰";
   optionsEl.innerHTML = "";
   buttonsEl.innerHTML = "";
-  saveAttempt();
-
   resultEl.hidden = false;
-  resultEl.innerHTML = "Твои ответы сохранены 💌";
-
-  const link = document.createElement("a");
-  link.className = "btn btn-yes";
-  link.href = "results.html";
-  link.textContent = "Показать результаты";
-  buttonsEl.appendChild(link);
+  resultEl.innerHTML = "Твои ответы отправлены 💌";
+  saveAttempt();
 }
 
+// Отправляем попытку на сервер. Каждая отправка — отдельная попытка.
 function saveAttempt() {
-  const attempt = {
-    id: Date.now(),
-    date: new Date().toISOString(),
-    answers,
-  };
-  const all = loadAttempts();
-  all.push(attempt);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-}
-
-function loadAttempts() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch {
-    return [];
-  }
+  fetch("save.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ answers }),
+  })
+    .then((r) => r.json())
+    .then((res) => {
+      if (!res || !res.ok) throw new Error("save failed");
+    })
+    .catch(() => {
+      resultEl.innerHTML = "Не удалось отправить ответы 😢 Проверь интернет.";
+    });
 }
 
 render();
