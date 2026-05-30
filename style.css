@@ -359,6 +359,30 @@ code { color: var(--accent-2); }
 .manual-main { flex: 1; min-width: 0; }
 .manual-main h1 { font-size: 28px; }
 .manual-toc { color: var(--muted); }
+
+/* Контент мануала «2-3 модуль» */
+.manual-nav { align-self: flex-start; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.manual-nav-title { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 4px 12px 8px; }
+.manual-doc { line-height: 1.7; }
+.manual-doc .manual-intro { color: var(--muted); border-left: 3px solid var(--accent); padding-left: 14px; margin: 0 0 28px; }
+.manual-doc h2 {
+  font-size: 22px;
+  margin: 38px 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  scroll-margin-top: 16px;
+}
+.manual-doc p { margin: 0 0 12px; color: #d4ddec; }
+.manual-doc ul { margin: 0 0 12px; padding-left: 22px; color: #d4ddec; }
+.manual-doc li { margin-bottom: 6px; }
+.manual-fig { margin: 16px 0 22px; text-align: center; }
+.manual-fig img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
 .manual-placeholder {
   border: 1px dashed var(--border); border-radius: var(--radius);
   padding: 28px; color: var(--muted); background: var(--panel);

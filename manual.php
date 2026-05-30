@@ -47,37 +47,6 @@ if (!$authed) {
 }
 
 // ---- Доступ есть. Показываем мануал. ----
-
-// Структура мануала. Контент добавим позже — пока заглушки.
-$pages = [
-  'index' => [
-    'title' => 'Мануал — оглавление',
-    'body'  => '', // оглавление рисуется ниже автоматически
-  ],
-  '1' => [
-    'title' => 'Раздел 1',
-    'body'  => '', // TODO: добавить контент позже
-  ],
-  '2' => [
-    'title' => 'Раздел 2',
-    'body'  => '', // TODO: добавить контент позже
-  ],
-  '3' => [
-    'title' => 'Раздел 3',
-    'body'  => '', // TODO: добавить контент позже
-  ],
-];
-
-$p = isset($_GET['p']) ? (string) $_GET['p'] : 'index';
-if (!isset($pages[$p])) {
-  $p = 'index';
-}
-$page = $pages[$p];
-
-function e(string $s): string
-{
-  return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
-}
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -85,7 +54,7 @@ function e(string $s): string
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title><?= e($page['title']) ?> — <?= e($SITE_NAME) ?></title>
+  <title>2–3 модуль — <?= htmlspecialchars($SITE_NAME, ENT_QUOTES, 'UTF-8') ?></title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="manual-body">
@@ -95,33 +64,16 @@ function e(string $s): string
     <a class="manual-exit" href="manual.php?logout=1">выйти из раздела</a>
   </header>
 
-  <div class="manual-layout">
-    <nav class="manual-nav">
-      <a class="<?= $p === 'index' ? 'active' : '' ?>" href="manual.php?p=index">Оглавление</a>
-      <a class="<?= $p === '1' ? 'active' : '' ?>" href="manual.php?p=1">Раздел 1</a>
-      <a class="<?= $p === '2' ? 'active' : '' ?>" href="manual.php?p=2">Раздел 2</a>
-      <a class="<?= $p === '3' ? 'active' : '' ?>" href="manual.php?p=3">Раздел 3</a>
-    </nav>
-
-    <main class="manual-main">
-      <h1><?= e($page['title']) ?></h1>
-
-      <?php if ($p === 'index'): ?>
-        <p>Это скрытый раздел с мануалом. Контент будет добавлен позже.</p>
-        <ul class="manual-toc">
-          <li><a href="manual.php?p=1">Раздел 1</a> — заглушка</li>
-          <li><a href="manual.php?p=2">Раздел 2</a> — заглушка</li>
-          <li><a href="manual.php?p=3">Раздел 3</a> — заглушка</li>
-        </ul>
-      <?php elseif (trim($page['body']) !== ''): ?>
-        <?= $page['body'] ?>
-      <?php else: ?>
-        <div class="manual-placeholder">
-          <p>Здесь пока пусто. Контент мануала добавим сюда позже.</p>
-          <p class="hint">Редактируется в <code>manual.php</code> → массив <code>$pages</code>.</p>
-        </div>
-      <?php endif; ?>
-    </main>
-  </div>
+  <?php
+    // Контент мануала (текст + картинки из «2-3 модуль.docx»).
+    // Генерируется в отдельный файл, чтобы manual.php оставался компактным.
+    $contentFile = __DIR__ . '/manual_mod23.html';
+    if (is_file($contentFile)) {
+      readfile($contentFile);
+    } else {
+      echo '<div class="manual-layout"><main class="manual-main">'
+        . '<p>Контент мануала не найден.</p></main></div>';
+    }
+  ?>
 </body>
 </html>

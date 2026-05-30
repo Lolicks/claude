@@ -73,6 +73,7 @@ rsync -a --delete \
   --exclude '.claude' \
   --exclude 'install.sh' \
   --exclude 'README.md' \
+  --exclude '*.docx' \
   --exclude 'data/posts.json' \
   --exclude 'data/chat.json' \
   "${SCRIPT_DIR}/" "${WEBROOT}/"
