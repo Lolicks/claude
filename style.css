@@ -11,7 +11,6 @@ body {
   justify-content: center;
   font-family: "Segoe UI", system-ui, sans-serif;
   background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 50%, #fbc2eb 100%);
-  overflow: hidden;
 }
 
 .card {
@@ -26,11 +25,35 @@ body {
   z-index: 1;
 }
 
+.progress {
+  width: 100%;
+  height: 8px;
+  background: #ffe3ec;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0;
+  background: #ff4d6d;
+  border-radius: 8px;
+  transition: width 0.35s ease;
+}
+
 .question {
-  font-size: 2rem;
+  font-size: 1.8rem;
   color: #d6336c;
-  margin-bottom: 36px;
+  margin-bottom: 32px;
   line-height: 1.3;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 8px;
 }
 
 .buttons {
@@ -44,11 +67,13 @@ body {
 .btn {
   border: none;
   border-radius: 16px;
-  padding: 16px 40px;
-  font-size: 1.2rem;
+  padding: 16px 32px;
+  font-size: 1.15rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .btn-yes {
@@ -58,7 +83,7 @@ body {
 }
 
 .btn-yes:hover {
-  transform: scale(1.08);
+  transform: scale(1.06);
   box-shadow: 0 12px 28px rgba(255, 77, 109, 0.55);
 }
 
@@ -68,15 +93,151 @@ body {
   position: relative;
 }
 
+.btn-option {
+  background: #fff0f5;
+  color: #d6336c;
+  border: 2px solid #ffd0e0;
+  width: 100%;
+}
+
+.btn-option:hover {
+  background: #ffe0ec;
+  transform: scale(1.03);
+}
+
 .result {
-  margin-top: 32px;
-  font-size: 1.4rem;
+  margin-top: 28px;
+  font-size: 1.3rem;
   color: #d6336c;
   font-weight: 600;
   animation: pop 0.4s ease;
 }
 
+.results-link {
+  display: block;
+  margin-top: 28px;
+  color: #b03a5b;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.results-link:hover {
+  text-decoration: underline;
+}
+
 @keyframes pop {
   0% { transform: scale(0); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+/* ---------- Страница результатов (2 часть) ---------- */
+.results-body {
+  align-items: flex-start;
+  padding: 32px 16px;
+}
+
+.results-wrap {
+  width: 100%;
+  max-width: 720px;
+}
+
+.results-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.results-header h1 {
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  font-size: 1.9rem;
+}
+
+.results-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-clear {
+  background: #fff;
+  color: #d6336c;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.btn-clear:hover {
+  background: #ffe0ec;
+}
+
+.empty {
+  background: rgba(255, 255, 255, 0.92);
+  padding: 28px;
+  border-radius: 20px;
+  text-align: center;
+  color: #d6336c;
+  font-size: 1.1rem;
+}
+
+.empty a {
+  color: #ff4d6d;
+}
+
+.attempts {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.attempt {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 22px 24px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.attempt-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  border-bottom: 2px dashed #ffd0e0;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.attempt-num {
+  font-weight: 700;
+  color: #d6336c;
+  font-size: 1.15rem;
+}
+
+.attempt-date {
+  color: #9aa0a6;
+  font-size: 0.9rem;
+}
+
+.answers {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.answers li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.answers .q {
+  color: #6c757d;
+  font-size: 0.92rem;
+}
+
+.answers .a {
+  color: #212529;
+  font-weight: 600;
+  font-size: 1.05rem;
 }

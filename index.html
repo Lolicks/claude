@@ -3,20 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Тест для тебя</title>
+  <title>Тест для тебя 💖</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="card">
-    <div class="hearts" aria-hidden="true"></div>
-    <h1 class="question">Ты меня любишь? 💖</h1>
-
-    <div class="buttons">
-      <button id="yesBtn" class="btn btn-yes" type="button">Да</button>
-      <button id="noBtn" class="btn btn-no" type="button">Нет</button>
+    <div class="progress">
+      <div id="progressBar" class="progress-bar"></div>
     </div>
 
-    <p id="result" class="result" hidden>Ура! Я так и знал 🥰</p>
+    <h1 id="question" class="question"></h1>
+
+    <div id="options" class="options"></div>
+
+    <div id="buttons" class="buttons"></div>
+
+    <p id="result" class="result" hidden></p>
+
+    <a class="results-link" href="results.html">Посмотреть все попытки →</a>
   </main>
 
   <script src="script.js"></script>
