@@ -44,6 +44,96 @@
 3. Убедись, что папка `data/` доступна для записи (права `755` или `775`). Файл `data/attempts.json` создастся сам при первой попытке.
 4. Открой сайт — отдай ей ссылку на `index.html` (или просто на корень сайта), а себе оставь `admin.php`.
 
+## 🖥️ Установка на сервер Debian (заход по IP)
+
+Пошагово, как поднять сайт на чистом сервере Debian (11/12) и открывать его по IP-адресу, например `http://123.45.67.89`.
+
+### 1. Подключись к серверу по SSH
+
+```bash
+ssh root@123.45.67.89
+```
+(вместо `123.45.67.89` — IP твоего сервера)
+
+### 2. Установи веб-сервер Apache и PHP
+
+```bash
+apt update
+apt install -y apache2 php libapache2-mod-php
+```
+
+### 3. Залей файлы сайта
+
+Корень сайта по умолчанию — `/var/www/html`. Удали стандартную страницу и положи туда файлы проекта:
+
+```bash
+rm -f /var/www/html/index.html
+```
+
+Загрузить файлы можно одним из способов:
+
+- **Через git** (если проект в репозитории):
+  ```bash
+  apt install -y git
+  rm -rf /var/www/html && git clone <ссылка_на_репозиторий> /var/www/html
+  ```
+- **Через scp** со своего компьютера (выполнять локально, не на сервере):
+  ```bash
+  scp -r ./* root@123.45.67.89:/var/www/html/
+  ```
+
+### 4. Поставь права на папку с данными
+
+Веб-серверу нужно право записи в `data/`, чтобы сохранять попытки:
+
+```bash
+chown -R www-data:www-data /var/www/html
+chmod -R 755 /var/www/html
+chmod -R 775 /var/www/html/data
+```
+
+### 5. Включи поддержку .htaccess (чтобы папка data была закрыта)
+
+```bash
+a2enmod rewrite
+```
+
+Открой конфиг `/etc/apache2/apache2.conf` и убедись, что для `/var/www/` стоит `AllowOverride All`:
+
+```apache
+<Directory /var/www/>
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+```
+
+Перезапусти Apache:
+
+```bash
+systemctl restart apache2
+```
+
+### 6. Поменяй пароль админки
+
+```bash
+nano /var/www/html/config.php
+```
+Замени `changeme` на свой пароль, сохрани (Ctrl+O, Enter, Ctrl+X).
+
+### 7. Открой порт 80 (если включён фаервол)
+
+```bash
+ufw allow 80/tcp
+```
+
+### 8. Готово — заходи по IP
+
+- Тест (для неё):  `http://123.45.67.89/`
+- Админка (для тебя): `http://123.45.67.89/admin.php`
+
+> Если хочешь красивый адрес вместо IP — нужен домен; скажи, добавлю инструкцию.
+
 ## 🔒 Безопасность
 
 - Пароль админки лежит в `config.php` — **обязательно поменяй** значение по умолчанию `changeme`.
