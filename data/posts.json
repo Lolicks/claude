@@ -1,0 +1,26 @@
+[
+  {
+    "id": "seed1",
+    "author": "netmaxim",
+    "title": "PAT для офиса /24 через один белый IP",
+    "description": "Поднимал интернет для офисной сети 192.168.10.0/24 в Cisco IOL. Один белый адрес на e0/1, вся сеть выходит через overload. Работает стабильно.",
+    "config": "interface e0/0\n ip address 192.168.10.1 255.255.255.0\n ip nat inside\n!\ninterface e0/1\n ip address 203.0.113.2 255.255.255.252\n ip nat outside\n!\naccess-list 10 permit 192.168.10.0 0.0.0.255\nip nat inside source list 10 interface e0/1 overload\nip route 0.0.0.0 0.0.0.0 203.0.113.1",
+    "date": "2026-05-22T10:14:00+00:00"
+  },
+  {
+    "id": "seed2",
+    "author": "ccna_kate",
+    "title": "Статический проброс веб-сервера наружу",
+    "description": "Нужно было опубликовать внутренний веб-сервер 10.1.1.10 на внешнем адресе. Сделала static NAT только на 80/443, чтобы не светить остальное.",
+    "config": "ip nat inside source static tcp 10.1.1.10 80 198.51.100.20 80\nip nat inside source static tcp 10.1.1.10 443 198.51.100.20 443\n!\ninterface e0/0\n ip nat inside\ninterface e0/1\n ip nat outside",
+    "date": "2026-05-25T16:40:00+00:00"
+  },
+  {
+    "id": "seed3",
+    "author": "gns3_lab",
+    "title": "Динамический NAT из пула (лаба в EVE-NG)",
+    "description": "Тренировал dynamic NAT с пулом адресов. Если хостов больше, чем адресов в пуле — добавляйте overload, иначе часть клиентов останется без трансляции.",
+    "config": "ip nat pool OUTPOOL 198.51.100.30 198.51.100.34 netmask 255.255.255.0\naccess-list 7 permit 172.16.0.0 0.0.255.255\nip nat inside source list 7 pool OUTPOOL overload\n!\ninterface e0/0\n ip nat inside\ninterface e0/1\n ip nat outside",
+    "date": "2026-05-28T09:05:00+00:00"
+  }
+]
