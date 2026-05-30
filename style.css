@@ -26,12 +26,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 18px;
   font-family: "Nunito", system-ui, sans-serif;
   color: var(--ink);
   background: linear-gradient(135deg, #ffd1dc, #ff9ebb, #ff8fab, #c08cff, #9bb5ff);
   background-size: 300% 300%;
   animation: bgshift 18s ease infinite;
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
 }
 
 @keyframes bgshift {
@@ -181,6 +183,9 @@ body {
   color: #7a5a6c;
   background: rgba(255, 255, 255, 0.7);
   border: 1.5px solid rgba(255, 255, 255, 0.8);
+  z-index: 30; /* поверх карточки и сердечек, когда убегает */
+  touch-action: none; /* чтобы тап не скроллил, а кнопка успевала отпрыгнуть */
+  transition: left 0.12s ease, top 0.12s ease, transform 0.18s ease;
 }
 
 .btn-option {
@@ -452,8 +457,67 @@ body {
   box-shadow: 0 0 0 4px rgba(255, 77, 141, 0.18);
 }
 
-@media (max-width: 520px) {
-  .card { padding: 34px 24px 30px; }
-  .question { font-size: 1.55rem; }
-  .results-header h1 { font-size: 1.6rem; }
+/* ---------- Телефоны ---------- */
+@media (max-width: 600px) {
+  .card {
+    width: 100%;
+    padding: 30px 20px 26px;
+    border-radius: 26px;
+  }
+
+  .question {
+    font-size: 1.5rem;
+    margin-bottom: 24px;
+  }
+
+  .step { font-size: 0.74rem; }
+
+  .btn {
+    padding: 15px 24px;
+    font-size: 1.05rem;
+  }
+
+  /* Да/Нет в столбик и во всю ширину — удобно пальцем. */
+  .buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .btn-yes,
+  .btn-no {
+    width: 100%;
+  }
+
+  .btn-option {
+    padding: 15px 18px;
+    font-size: 1.02rem;
+  }
+
+  .heart-big { font-size: 3.4rem; }
+  .result { font-size: 1.2rem; }
+
+  /* Админка */
+  .results-body { padding: 24px 14px; }
+  .results-header { justify-content: center; text-align: center; }
+  .results-header h1 { font-size: 1.5rem; width: 100%; }
+  .results-actions { width: 100%; justify-content: center; }
+  .attempt { padding: 18px 16px; }
+  .attempt-head { flex-direction: column; align-items: flex-start; gap: 4px; }
+}
+
+/* Очень узкие экраны */
+@media (max-width: 360px) {
+  .question { font-size: 1.32rem; }
+  .btn { font-size: 1rem; }
+}
+
+/* Кому некомфортны анимации — выключаем движение. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
