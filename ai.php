@@ -37,6 +37,8 @@ $reply = null;
 
 if ($AI_API_KEY !== '' && $provider === 'anthropic') {
   $reply = call_anthropic($AI_API_KEY, $AI_MODEL, $AI_SYSTEM_PROMPT, $history, $message);
+} elseif ($AI_API_KEY !== '' && $provider === 'openrouter') {
+  $reply = call_openrouter($AI_API_KEY, $AI_MODEL, $AI_SYSTEM_PROMPT, $history, $message);
 } elseif ($AI_API_KEY !== '' && $provider === 'openai') {
   $reply = call_openai($AI_API_KEY, $AI_MODEL, $AI_SYSTEM_PROMPT, $history, $message);
 }
@@ -94,6 +96,33 @@ function call_anthropic(string $key, string $model, string $system, array $histo
   // Ответ: { content: [ { type:'text', text:'...' } ] }
   if (isset($data['content'][0]['text'])) {
     return (string) $data['content'][0]['text'];
+  }
+  return null;
+}
+
+// OpenRouter — единый шлюз ко множеству моделей. API совместим с OpenAI,
+// отличается базовый URL и пара необязательных заголовков (для статистики OpenRouter).
+function call_openrouter(string $key, string $model, string $system, array $history, string $message): ?string
+{
+  $messages = [['role' => 'system', 'content' => $system]];
+  foreach ($history as $turn) {
+    $messages[] = $turn;
+  }
+  $messages[] = ['role' => 'user', 'content' => $message];
+  $data = http_post_json('https://openrouter.ai/api/v1/chat/completions', [
+    'Content-Type: application/json',
+    'Authorization: Bearer ' . $key,
+    'HTTP-Referer: https://helpcisco.local',
+    'X-Title: helpCisco',
+  ], [
+    'model'    => $model ?: 'openai/gpt-4o-mini',
+    'messages' => $messages,
+  ]);
+  if ($data === null) {
+    return null;
+  }
+  if (isset($data['choices'][0]['message']['content'])) {
+    return (string) $data['choices'][0]['message']['content'];
   }
   return null;
 }

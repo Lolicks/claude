@@ -19,17 +19,21 @@ $CHAT_FILE  = __DIR__ . '/data/chat.json';  // сообщения чатов (п
 $MANUAL_KEY = 'ios-nat-2024';
 
 // --- ИИ-поддержка (кнопка поддержки в углу) ---
-// Провайдер: 'anthropic', 'openai' или 'none'.
-//   anthropic/openai — реальные ответы LLM (нужен ключ ниже);
+// Провайдер: 'openrouter', 'anthropic', 'openai' или 'none'.
+//   openrouter/anthropic/openai — реальные ответы LLM (нужен ключ ниже);
 //   none или пустой ключ — встроенный оффлайн-ассистент по NAT (работает без интернета и ключа).
-$AI_PROVIDER = 'anthropic';
+$AI_PROVIDER = 'openrouter';
 
 // API-ключ. Если пусто — поддержка автоматически переключится на встроенного ассистента.
-// Ключ можно положить и в переменную окружения HELPCISCO_AI_KEY (приоритетнее этого значения).
+// НЕ храни ключ здесь в публичном репозитории! Положи его в переменную окружения
+// HELPCISCO_AI_KEY (она приоритетнее этого значения) — см. README.
 $AI_API_KEY = '';
 
-// Модель. Для anthropic, например: 'claude-sonnet-4-6'. Для openai: 'gpt-4o-mini'.
-$AI_MODEL = 'claude-sonnet-4-6';
+// Модель.
+//   openrouter — id вида 'openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', и т.д.;
+//   anthropic  — например 'claude-sonnet-4-6';
+//   openai     — например 'gpt-4o-mini'.
+$AI_MODEL = 'openai/gpt-4o-mini';
 
 // Системная подсказка для ассистента поддержки.
 $AI_SYSTEM_PROMPT = 'Ты — ассистент поддержки сайта helpCisco. '
