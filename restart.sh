@@ -55,7 +55,7 @@ PASS=0; FAIL=0; WARN=0
 BODY="$(mktemp /tmp/helpcisco-hc.XXXXXX)"
 trap 'rm -f "$BODY"' EXIT
 
-head()  { printf "\n${C_H}==> %s${C_R}\n" "$*"; }
+section() { printf "\n${C_H}==> %s${C_R}\n" "$*"; }
 pass()  { PASS=$((PASS+1)); printf "  ${C_OK}✔${C_R} %s\n" "$*"; }
 fail()  { FAIL=$((FAIL+1)); printf "  ${C_BAD}x${C_R} %s\n" "$*"; }
 warn()  { WARN=$((WARN+1)); printf "  ${C_WARN}!${C_R} %s\n" "$*"; }
@@ -128,13 +128,13 @@ MANUAL_KEY="$(php_cfg 'echo $MANUAL_KEY;')"
 
 # ---------- 1. Перезапуск ----------
 if [[ "$NO_RESTART" == "1" ]]; then
-  head "Перезапуск пропущен (--no-restart)"
+  section "Перезапуск пропущен (--no-restart)"
 elif [[ "$MODE" == "systemd" ]]; then
-  head "Перезапускаю systemd-сервис ${SERVICE_NAME}"
+  section "Перезапускаю systemd-сервис ${SERVICE_NAME}"
   if systemctl restart "$SERVICE_NAME" 2>/dev/null; then info "systemctl restart выполнен"
   else warn "Не удалось перезапустить сервис (нужен root?). Продолжаю проверки."; fi
 else
-  head "Перезапускаю локальный сервер (php -S :${PORT})"
+  section "Перезапускаю локальный сервер (php -S :${PORT})"
   if [[ -z "$PHP_BIN" ]]; then
     fail "php не найден — локальный сервер не запустить. Поставь php-cli."
   else
@@ -148,7 +148,7 @@ else
 fi
 
 # ---------- 2. Ждём, пока поднимется ----------
-head "Жду готовности сайта"
+section "Жду готовности сайта"
 up=0
 for i in $(seq 1 30); do
   code="$(curl -s -m 5 -o /dev/null -w '%{http_code}' "${BASE_URL}/" 2>/dev/null || true)"
@@ -163,7 +163,7 @@ else
 fi
 
 # ---------- 3. Страницы и статика ----------
-head "Страницы и статические файлы"
+section "Страницы и статические файлы"
 code="$(req GET "${BASE_URL}/")"
 if [[ "$code" == "200" ]] && grep -qi 'helpCisco' "$BODY"; then pass "Главная (index.php) отдаётся и содержит контент"
 else fail "Главная — HTTP ${code:-?} или нет ожидаемого контента"; fi
@@ -173,13 +173,13 @@ expect_code "theme.js доступен (рандомная тема)" GET "${BAS
 expect_code "Админка (admin.php) открывает форму входа" GET "${BASE_URL}/admin.php" 200
 
 # ---------- 4. API: лента конфигов и чат ----------
-head "API: лента конфигов и чат"
+section "API: лента конфигов и чат"
 expect_ok_json "posts.php (GET) — лента конфигов отвечает ok"        "${BASE_URL}/posts.php"
 expect_ok_json "chat.php?room=global (GET) — общий чат отвечает ok"  "${BASE_URL}/chat.php?room=global"
 expect_code   "chat.php с битой комнатой отклоняется (400)" GET "${BASE_URL}/chat.php?room=..%2Fbad" 400
 
 # ---------- 5. Скрытый мануал ----------
-head "Скрытый раздел (manual.php)"
+section "Скрытый раздел (manual.php)"
 expect_code "Без ключа manual.php прикидывается 404 (раздел скрыт)" GET "${BASE_URL}/manual.php" 404
 if [[ -n "$MANUAL_KEY" ]]; then
   code="$(req GET "${BASE_URL}/manual.php?key=$(printf '%s' "$MANUAL_KEY" | sed 's/ /%20/g')")"
@@ -190,22 +190,27 @@ else
 fi
 
 # ---------- 6. Защита служебных файлов ----------
-head "Защита служебных файлов (не должны отдаваться)"
+section "Защита служебных файлов (не должны отдаваться)"
 expect_code "config.php закрыт (403)"      GET "${BASE_URL}/config.php"      403
 expect_code "lib.php закрыт (403)"         GET "${BASE_URL}/lib.php"         403
 expect_code ".env закрыт (403)"            GET "${BASE_URL}/.env"            403
 expect_code "data/posts.json закрыт (403)" GET "${BASE_URL}/data/posts.json" 403
 
 # ---------- 7. ИИ-поддержка ----------
-head "ИИ-поддержка (ai.php)"
+section "ИИ-поддержка (ai.php)"
 code="$(req POST "${BASE_URL}/ai.php" '{"message":"healthcheck: ответь одним словом"}')"
-source="$(sed -n 's/.*"source"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$BODY" | head -n1)"
+# Достаём поле "source" из JSON (одной строкой, без лишних пробелов/переводов строк).
+ai_source="$(grep -o '"source"[[:space:]]*:[[:space:]]*"[^"]*"' "$BODY" \
+  | sed 's/.*"\([^"]*\)"[[:space:]]*$/\1/' | tr -d '\r\n' | head -c40)"
 if [[ "$code" != "200" ]] || ! grep -q '"ok":true' "$BODY"; then
   fail "ai.php не ответил корректно — HTTP ${code:-?}, тело: $(head -c140 "$BODY")"
+elif [[ -z "$ai_source" ]]; then
+  warn "ai.php ответил (HTTP 200, ok), но поле source не распозналось — тело: $(head -c140 "$BODY")"
 else
-  pass "ai.php отвечает (HTTP 200, ok), source=${source:-?}"
+  pass "ai.php отвечает (HTTP 200, ok), source=${ai_source}"
   # Разбираем, реально ли подключён внешний ИИ.
   prov="$(printf '%s' "${AI_PROVIDER:-}" | tr '[:upper:]' '[:lower:]')"
+  source="$ai_source"
   if [[ -z "$PHP_BIN" || ! -f "$WEBROOT/config.php" ]]; then
     info "Конфиг недоступен скрипту — сужу только по ответу."
     [[ "$source" == "offline" ]] \
@@ -229,7 +234,7 @@ else
 fi
 
 # ---------- Итог ----------
-head "Итог"
+section "Итог"
 printf "  ${C_OK}Пройдено: %d${C_R}   ${C_WARN}Предупреждений: %d${C_R}   ${C_BAD}Провалено: %d${C_R}\n" \
   "$PASS" "$WARN" "$FAIL"
 if [[ "$FAIL" -gt 0 ]]; then
