@@ -8,8 +8,12 @@
   --border: #26304a;
   --text: #e6ebf5;
   --muted: #8d9bb5;
-  --accent: #2fb6ff;      /* cisco-blue */
-  --accent-2: #1de9b6;    /* teal */
+  /* Акценты заданы как RGB-компоненты, чтобы их можно было использовать в rgba()
+     и менять одним местом (в т.ч. рандомная тема на каждую загрузку, см. index.php). */
+  --accent-rgb: 47, 182, 255;   /* cisco-blue */
+  --accent2-rgb: 29, 233, 182;  /* teal */
+  --accent: rgb(var(--accent-rgb));
+  --accent-2: rgb(var(--accent2-rgb));
   --green: #3ddc84;
   --danger: #ff5d6c;
   --code-bg: #0a0e16;
@@ -26,8 +30,8 @@ body.site {
   font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color: var(--text);
   background:
-    radial-gradient(1100px 500px at 80% -10%, rgba(47, 182, 255, 0.10), transparent 60%),
-    radial-gradient(900px 500px at -10% 10%, rgba(29, 233, 182, 0.08), transparent 55%),
+    radial-gradient(1100px 500px at 80% -10%, rgba(var(--accent-rgb), 0.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(var(--accent2-rgb), 0.08), transparent 55%),
     var(--bg);
   line-height: 1.55;
 }
@@ -139,7 +143,7 @@ h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 .5em; }
   color: var(--accent);
 }
 .article .config { margin: 0 0 18px; font-size: 13px; }
-.article code { background: rgba(47,182,255,.1); padding: 1px 6px; border-radius: 5px; font-size: 13px; }
+.article code { background: rgba(var(--accent-rgb),.1); padding: 1px 6px; border-radius: 5px; font-size: 13px; }
 .article .config code { background: none; padding: 0; }
 
 .nat-types {
@@ -184,7 +188,7 @@ h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 .5em; }
   tab-size: 2;
 }
 code { color: var(--accent-2); }
-.guide-step code, .post-desc code { background: rgba(47,182,255,.1); padding: 1px 6px; border-radius: 5px; font-size: 12px; }
+.guide-step code, .post-desc code { background: rgba(var(--accent-rgb),.1); padding: 1px 6px; border-radius: 5px; font-size: 12px; }
 
 /* ---------- Лента постов ---------- */
 .posts { display: flex; flex-direction: column; gap: 22px; }
@@ -341,6 +345,9 @@ code { color: var(--accent-2); }
   flex-direction: column;
   overflow: hidden;
 }
+/* display:flex выше перекрывает атрибут [hidden], поэтому скрываем явно —
+   иначе чат поддержки виден сразу и кнопка-«?» не закрывает его. */
+.support-panel[hidden] { display: none; }
 .support-head {
   display: flex;
   align-items: center;
@@ -372,8 +379,8 @@ code { color: var(--accent-2); }
 }
 .support-log .msg.bot { background: var(--panel-2); align-self: flex-start; }
 .support-log .msg.me {
-  background: linear-gradient(135deg, rgba(47,182,255,.22), rgba(29,233,182,.18));
-  border-color: rgba(47,182,255,.4);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb),.22), rgba(var(--accent2-rgb),.18));
+  border-color: rgba(var(--accent-rgb),.4);
   align-self: flex-end;
 }
 .support-log .msg .msg-text { font-size: 14px; line-height: 1.5; }
