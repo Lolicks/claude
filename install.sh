@@ -101,6 +101,8 @@ find "${WEBROOT}" -type f -exec chmod 644 {} \;
 chmod 775 "${WEBROOT}/data"
 # .env с секретами — только для владельца.
 [[ -f "${WEBROOT}/.env" ]] && chmod 600 "${WEBROOT}/.env"
+# Скрипт перезапуска/проверки оставляем исполняемым.
+[[ -f "${WEBROOT}/restart.sh" ]] && chmod 755 "${WEBROOT}/restart.sh"
 ok "Папка data доступна для записи."
 
 # ---------- 6. systemd-сервис ----------
@@ -166,6 +168,7 @@ echo "Управление сервисом:"
 echo "  systemctl status ${SERVICE_NAME}     # статус"
 echo "  systemctl restart ${SERVICE_NAME}    # перезапуск"
 echo "  journalctl -u ${SERVICE_NAME} -f     # логи"
+echo "  ${WEBROOT}/restart.sh                # перезапуск + проверка всех функций (и работы ИИ)"
 echo
 echo "Если по http://${PUBLIC_IP}:${PORT}/ не открывается снаружи —"
 echo "открой порт ${PORT} ещё и в фаерволе/панели хостинга (внешний firewall)."
