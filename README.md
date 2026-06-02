@@ -37,13 +37,19 @@
 По умолчанию `$AI_API_KEY` пуст → отвечает встроенный оффлайн-ассистент по NAT (без интернета).
 Чтобы отвечала настоящая LLM:
 
-1. В `config.php` выбери `$AI_PROVIDER` (`anthropic` или `openai`) и `$AI_MODEL`.
-2. Дай ключ — либо в `config.php` (`$AI_API_KEY`), либо (надёжнее) через переменную окружения
-   `HELPCISCO_AI_KEY` (имеет приоритет). При установке через `install.sh` положи её в
-   `/etc/helpcisco.env`:
+1. В `config.php` выбери `$AI_PROVIDER` (`openrouter`, `anthropic` или `openai`) и `$AI_MODEL`.
+   Для OpenRouter `$AI_MODEL` — id вида `openai/gpt-4o-mini` или `anthropic/claude-3.5-sonnet`.
+2. Дай ключ через переменную окружения `HELPCISCO_AI_KEY` (она приоритетнее значения в файле).
+   **Не коммить ключ в репозиторий** — иначе он утечёт в публичный код. При установке через
+   `install.sh` положи ключ в `/etc/helpcisco.env`:
    ```bash
-   echo 'HELPCISCO_AI_KEY=sk-...' > /etc/helpcisco.env
+   echo 'HELPCISCO_AI_KEY=sk-or-v1-...' > /etc/helpcisco.env
    systemctl restart helpcisco
+   ```
+   Для локального запуска (`php -S`) задай ключ в той же сессии:
+   ```bash
+   export HELPCISCO_AI_KEY=sk-or-v1-...
+   php -S localhost:8000 router.php
    ```
 
 Системная подсказка ассистента — `$AI_SYSTEM_PROMPT` в `config.php`.
