@@ -125,6 +125,10 @@ AI_PROVIDER="$(php_cfg 'echo $AI_PROVIDER;')"
 AI_HAS_KEY="$(php_cfg 'echo ($AI_API_KEY !== "" ? "1" : "0");')"
 AI_MODEL="$(php_cfg 'echo $AI_MODEL;')"
 MANUAL_KEY="$(php_cfg 'echo $MANUAL_KEY;')"
+# Есть ли расширение php-curl: без него ai.php не достучится до внешней модели
+# и молча уходит в оффлайн. Самая частая причина «ИИ настроен, но отвечает оффлайн».
+AI_HAS_CURL=""
+[[ -n "$PHP_BIN" ]] && AI_HAS_CURL="$("$PHP_BIN" -r 'echo function_exists("curl_init")?"1":"0";' 2>/dev/null)"
 
 # ---------- 1. Перезапуск ----------
 if [[ "$NO_RESTART" == "1" ]]; then
@@ -221,8 +225,10 @@ else
       warn "AI_PROVIDER=${prov}, но AI_API_KEY пуст → отвечает оффлайн-ассистент. Впиши ключ в .env."
     elif [[ "$source" == "$prov" ]]; then
       pass "Внешний ИИ ПОДКЛЮЧЁН и РАБОТАЕТ: провайдер=${prov}, модель=${AI_MODEL:-?}."
+    elif [[ "$source" == "offline" && "$AI_HAS_CURL" == "0" ]]; then
+      fail "ИИ НАСТРОЕН (provider=${prov}, ключ есть), но в PHP НЕТ расширения curl → запрос к ${prov} невозможен, отвечает оффлайн-ассистент. Поставь его: apt-get install -y php-curl, затем перезапусти ($([[ "$MODE" == "systemd" ]] && echo "systemctl restart ${SERVICE_NAME}" || echo "./restart.sh"))."
     elif [[ "$source" == "offline" ]]; then
-      fail "ИИ НАСТРОЕН (provider=${prov}, ключ есть), но ответил ОФФЛАЙН-ассистент → запрос к ${prov} не прошёл. Проверь: верный ли ключ, существует ли модель '${AI_MODEL:-?}', есть ли php-curl и доступ в интернет (см. /etc/helpcisco.env, Settings→Privacy в OpenRouter, лимиты)."
+      fail "ИИ НАСТРОЕН (provider=${prov}, ключ есть), но ответил ОФФЛАЙН-ассистент → запрос к ${prov} не прошёл. Проверь: верный ли ключ, существует ли модель '${AI_MODEL:-?}', есть ли доступ в интернет (см. /etc/helpcisco.env, Settings→Privacy в OpenRouter, лимиты)."
     else
       warn "Неожиданный source='${source}' при провайдере ${prov}."
     fi

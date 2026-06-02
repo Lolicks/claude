@@ -47,11 +47,17 @@ log "Проверяю PHP..."
 export DEBIAN_FRONTEND=noninteractive
 if ! command -v php >/dev/null 2>&1; then
   apt-get update -y
-  apt-get install -y php-cli php-mbstring
+  # curl нужен для запросов к внешнему ИИ (OpenRouter/OpenAI/Anthropic);
+  # без него ai.php молча отвечает оффлайн-ассистентом.
+  apt-get install -y php-cli php-mbstring php-curl
 else
   # mbstring нужен для обработки текста (chat/posts/ai); доустановим, если его нет.
   if ! php -m | grep -qi '^mbstring$'; then
     apt-get update -y && apt-get install -y php-mbstring || true
+  fi
+  # curl нужен для внешнего ИИ — без него все ответы уходят в оффлайн-режим.
+  if ! php -m | grep -qi '^curl$'; then
+    apt-get update -y && apt-get install -y php-curl || true
   fi
 fi
 command -v rsync >/dev/null 2>&1 || apt-get install -y rsync
