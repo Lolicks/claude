@@ -9,6 +9,7 @@ $path = '/' . ltrim($uri, '/');
 if (
   preg_match('#^/data(/|$)#i', $path) ||
   preg_match('#/(config\.php|router\.php|lib\.php)$#i', $path) ||
+  preg_match('#/\.env(\.|$)#i', $path) ||
   preg_match('#\.(sh|md|log|docx?|xlsx?|pptx?)$#i', $path)
 ) {
   http_response_code(403);

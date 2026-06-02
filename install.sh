@@ -71,6 +71,7 @@ rsync -a --delete \
   --exclude '.git' \
   --exclude '.gitignore' \
   --exclude '.claude' \
+  --exclude '.env' \
   --exclude 'install.sh' \
   --exclude 'README.md' \
   --exclude '*.docx' \
@@ -84,6 +85,12 @@ for f in posts.json chat.json; do
     cp "${SCRIPT_DIR}/data/${f}" "${WEBROOT}/data/${f}"
   fi
 done
+
+# Создаём .env из шаблона, если его ещё нет (секреты живут только тут, не в git).
+if [[ ! -f "${WEBROOT}/.env" && -f "${SCRIPT_DIR}/.env.example" ]]; then
+  cp "${SCRIPT_DIR}/.env.example" "${WEBROOT}/.env"
+  ok "Создан ${WEBROOT}/.env из шаблона — впиши туда свои секреты."
+fi
 ok "Файлы на месте."
 
 # ---------- 5. Права ----------
@@ -92,6 +99,8 @@ chown -R "${RUN_USER}:${RUN_USER}" "${WEBROOT}"
 find "${WEBROOT}" -type d -exec chmod 755 {} \;
 find "${WEBROOT}" -type f -exec chmod 644 {} \;
 chmod 775 "${WEBROOT}/data"
+# .env с секретами — только для владельца.
+[[ -f "${WEBROOT}/.env" ]] && chmod 600 "${WEBROOT}/.env"
 ok "Папка data доступна для записи."
 
 # ---------- 6. systemd-сервис ----------
@@ -107,7 +116,8 @@ User=${RUN_USER}
 Group=${RUN_USER}
 WorkingDirectory=${WEBROOT}
 Environment=PHP_CLI_SERVER_WORKERS=4
-# Необязательный файл с секретами, напр. HELPCISCO_AI_KEY=sk-... (ключ ИИ-поддержки).
+# Необязательный файл с секретами окружения (перекрывает .env в каталоге сайта).
+# Напр.: AI_API_KEY=sk-or-v1-...  или  ADMIN_PASSWORD=...
 EnvironmentFile=-/etc/helpcisco.env
 ExecStart=${PHP_BIN} -S 0.0.0.0:${PORT} -t ${WEBROOT} ${WEBROOT}/router.php
 Restart=always
@@ -143,13 +153,14 @@ log "Готово! 🎉"
 echo "  Сайт:        http://${PUBLIC_IP}:${PORT}/"
 echo "  Модерация:   http://${PUBLIC_IP}:${PORT}/admin.php"
 echo
-err "Смени пароль модерации и секретный ключ мануала: nano ${WEBROOT}/config.php"
-err "  (\$ADMIN_PASSWORD по умолчанию 'changeme', \$MANUAL_KEY по умолчанию 'ios-nat-2024')"
+err "Впиши свои секреты в ${WEBROOT}/.env и перезапусти сервис:"
+err "  nano ${WEBROOT}/.env  &&  systemctl restart ${SERVICE_NAME}"
+err "  (ADMIN_PASSWORD по умолчанию 'changeme', MANUAL_KEY по умолчанию 'ios-nat-2024')"
 echo
 echo "ИИ-поддержка: по умолчанию работает встроенный оффлайн-ассистент по NAT."
-echo "Чтобы отвечала реальная модель — задай ключ:"
-echo "  echo 'HELPCISCO_AI_KEY=ТВОЙ_КЛЮЧ' > /etc/helpcisco.env && systemctl restart ${SERVICE_NAME}"
-echo "  (провайдер и модель — в ${WEBROOT}/config.php: \$AI_PROVIDER / \$AI_MODEL)"
+echo "Чтобы отвечала реальная модель — задай в ${WEBROOT}/.env:"
+echo "  AI_PROVIDER, AI_MODEL и AI_API_KEY (для OpenRouter — sk-or-v1-...), затем:"
+echo "  systemctl restart ${SERVICE_NAME}"
 echo
 echo "Управление сервисом:"
 echo "  systemctl status ${SERVICE_NAME}     # статус"
