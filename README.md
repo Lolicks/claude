@@ -27,32 +27,60 @@
 | **Подвал** | клик по версии `v2.4.1` с зажатым **Alt** |
 
 Все они открывают `manual.php?key=<секрет>`. Кто пришёл без ключа и не активировал скрытую
-кнопку — видит обычную страницу «404». Секрет задаётся в `config.php` → `$MANUAL_KEY`
+кнопку — видит обычную страницу «404». Секрет задаётся в `.env` → `MANUAL_KEY`
 (по умолчанию `ios-nat-2024`). После верного ключа доступ запоминается в сессии.
 
 Сам мануал — заглушки (`Раздел 1/2/3`). Контент добавляется в `manual.php`, массив `$pages`.
 
+## Настройки и секреты — файл `.env`
+
+Все настройки и секреты (пароль админки, ключ мануала, ключ ИИ, модель) хранятся в файле
+`.env` рядом с `config.php`. В репозиторий он **не коммитится** (см. `.gitignore`) — туда
+попадают только боевые значения на твоём сервере. Шаблон со списком всех переменных —
+`.env.example`.
+
+```bash
+cp .env.example .env   # создать свой .env
+nano .env              # вписать пароль, ключ ИИ и т.д.
+```
+
+Переменные в `.env`:
+
+| Переменная | Назначение |
+|------------|------------|
+| `SITE_NAME` | название сайта |
+| `ADMIN_PASSWORD` | пароль модерации (`admin.php`) — **обязательно смени** |
+| `MANUAL_KEY` | секретный ключ скрытого раздела `manual.php` |
+| `AI_PROVIDER` | `openrouter` / `anthropic` / `openai` / `none` |
+| `AI_API_KEY` | ключ провайдера ИИ (для OpenRouter — `sk-or-v1-...`) |
+| `AI_MODEL` | модель (для OpenRouter — id вида `openai/gpt-4o-mini`) |
+| `AI_SYSTEM_PROMPT` | системная подсказка ассистента (необязательно) |
+
+Приоритет источников: переменные окружения процесса → `.env` → значения по умолчанию.
+Это значит, что секрет можно задать и через окружение (например, systemd
+`EnvironmentFile=/etc/helpcisco.env`) — оно перекроет `.env`.
+
 ## ИИ-поддержка: как включить реальную модель
 
-По умолчанию `$AI_API_KEY` пуст → отвечает встроенный оффлайн-ассистент по NAT (без интернета).
+По умолчанию `AI_API_KEY` пуст → отвечает встроенный оффлайн-ассистент по NAT (без интернета).
 Чтобы отвечала настоящая LLM:
 
-1. В `config.php` выбери `$AI_PROVIDER` (`openrouter`, `anthropic` или `openai`) и `$AI_MODEL`.
-   Для OpenRouter `$AI_MODEL` — id вида `openai/gpt-4o-mini` или `anthropic/claude-3.5-sonnet`.
-2. Дай ключ через переменную окружения `HELPCISCO_AI_KEY` (она приоритетнее значения в файле).
-   **Не коммить ключ в репозиторий** — иначе он утечёт в публичный код. При установке через
-   `install.sh` положи ключ в `/etc/helpcisco.env`:
+1. В `.env` задай `AI_PROVIDER` (`openrouter`, `anthropic` или `openai`) и `AI_MODEL`.
+   Для OpenRouter `AI_MODEL` — id вида `openai/gpt-4o-mini` или `anthropic/claude-3.5-sonnet`.
+2. Впиши ключ в `.env` → `AI_API_KEY=sk-or-v1-...`. При установке через `install.sh` файл `.env`
+   на сервере сохраняется между переустановками (исключён из `--delete`).
+   Альтернатива — переменная окружения (перекрывает `.env`), например в `/etc/helpcisco.env`:
    ```bash
-   echo 'HELPCISCO_AI_KEY=sk-or-v1-...' > /etc/helpcisco.env
+   echo 'AI_API_KEY=sk-or-v1-...' >> /etc/helpcisco.env
    systemctl restart helpcisco
    ```
-   Для локального запуска (`php -S`) задай ключ в той же сессии:
+   Для локального запуска ключ можно задать прямо в `.env` или в текущей сессии:
    ```bash
-   export HELPCISCO_AI_KEY=sk-or-v1-...
+   export AI_API_KEY=sk-or-v1-...
    php -S localhost:8000 router.php
    ```
 
-Системная подсказка ассистента — `$AI_SYSTEM_PROMPT` в `config.php`.
+Системная подсказка ассистента — `AI_SYSTEM_PROMPT` в `.env` (есть значение по умолчанию).
 
 ## Как хранятся данные
 
@@ -82,8 +110,8 @@ sudo ./install.sh            # порт 8080 (или ближайший своб
 
 - Сайт: `http://IP:ПОРТ/`
 - Модерация: `http://IP:ПОРТ/admin.php`
-- **Смени** `$ADMIN_PASSWORD` и `$MANUAL_KEY` в `/var/www/helpcisco/config.php`, затем
-  `systemctl restart helpcisco`.
+- **Смени** `ADMIN_PASSWORD` и `MANUAL_KEY` в `/var/www/helpcisco/.env` (его создаёт установщик
+  из шаблона), затем `systemctl restart helpcisco`.
 
 Управление: `systemctl status|restart helpcisco`, логи: `journalctl -u helpcisco -f`.
 
@@ -108,15 +136,16 @@ php -S localhost:8000 router.php
 | `manual.php` | Скрытый раздел с мануалом (по секретному ключу) |
 | `admin.php` | Модерация: посты и чаты, удаление/очистка |
 | `lib.php` | Общие помощники (JSON-хранилище с блокировкой, санитизация) |
-| `config.php` | Настройки: пароль, ключ мануала, провайдер/ключ ИИ, имя сайта |
-| `router.php` | Роутер встроенного PHP-сервера: закрывает `data/`, `config.php`, `lib.php` |
+| `config.php` | Загружает `.env` и задаёт настройки (с дефолтами) |
+| `.env` / `.env.example` | Секреты (пароль, ключ мануала, ключ ИИ); `.env` не в git |
+| `router.php` | Роутер встроенного PHP-сервера: закрывает `data/`, `config.php`, `lib.php`, `.env` |
 | `install.sh` | Установка по IP: PHP + systemd-сервис на отдельном порту |
 | `data/` | JSON-хранилище (закрыто от прямого доступа) |
 
 ## Безопасность
 
-- Пароль модерации (`config.php` → `$ADMIN_PASSWORD`) и секрет мануала (`$MANUAL_KEY`) —
-  **обязательно поменяй** перед боем.
-- Прямой доступ к `data/`, `config.php`, `lib.php` закрыт `router.php` (встроенный сервер)
+- Секреты лежат в `.env` (пароль `ADMIN_PASSWORD`, ключ мануала `MANUAL_KEY`, ключ ИИ `AI_API_KEY`) —
+  **обязательно поменяй** дефолты перед боем. Файл `.env` не коммитится в git.
+- Прямой доступ к `data/`, `config.php`, `lib.php` и `.env` закрыт `router.php` (встроенный сервер)
   и `data/.htaccess` (Apache).
 - Вход по IP идёт по `http://`. Для личного использования это норм; нужен HTTPS — потребуется домен.
