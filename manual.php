@@ -54,7 +54,7 @@ if (!$authed) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>2–3 модуль — <?= htmlspecialchars($SITE_NAME, ENT_QUOTES, 'UTF-8') ?></title>
+  <title>Модули 1–3 — <?= htmlspecialchars($SITE_NAME, ENT_QUOTES, 'UTF-8') ?></title>
   <!-- Случайная тема на каждую загрузку (как на главной). -->
   <script src="theme.js"></script>
   <link rel="stylesheet" href="style.css">
@@ -67,7 +67,7 @@ if (!$authed) {
   </header>
 
   <?php
-    // Контент мануала (текст + картинки из «2-3 модуль.docx»).
+    // Контент мануала (текст + картинки из модулей 1 и 2–3).
     // Генерируется в отдельный файл, чтобы manual.php оставался компактным.
     $contentFile = __DIR__ . '/manual_mod23.html';
     if (is_file($contentFile)) {
