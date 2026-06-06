@@ -423,6 +423,17 @@ code { color: var(--accent-2); }
   border-bottom: 1px solid var(--border);
   scroll-margin-top: 16px;
 }
+.manual-doc h2.manual-part {
+  font-size: 26px;
+  margin: 46px 0 18px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(var(--accent-rgb),.18), rgba(var(--accent2-rgb),.06));
+  border-left: 4px solid var(--accent);
+  color: var(--text);
+}
+.manual-doc h2.manual-part:first-of-type { margin-top: 8px; }
 .manual-doc p { margin: 0 0 12px; color: #d4ddec; }
 .manual-doc ul { margin: 0 0 12px; padding-left: 22px; color: #d4ddec; }
 .manual-doc li { margin-bottom: 6px; }
