@@ -78,10 +78,12 @@ $AI_PROVIDER = env_str('AI_PROVIDER', 'openrouter');
 $AI_API_KEY = env_str('AI_API_KEY', '');
 
 // Модель.
-//   openrouter — id вида 'openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', и т.д.;
+//   openrouter — id вида 'z-ai/glm-4.5-air:free', 'openai/gpt-4o-mini', и т.д.;
 //   anthropic  — например 'claude-sonnet-4-6';
 //   openai     — например 'gpt-4o-mini'.
-$AI_MODEL = env_str('AI_MODEL', 'openai/gpt-4o-mini');
+// По умолчанию — бесплатная модель OpenRouter (суффикс :free). У бесплатных есть лимиты
+// запросов (ответ HTTP 429) — для стабильности задай платную модель или пополни баланс.
+$AI_MODEL = env_str('AI_MODEL', 'z-ai/glm-4.5-air:free');
 
 // Системная подсказка для ассистента поддержки (можно переопределить в .env → AI_SYSTEM_PROMPT).
 $AI_SYSTEM_PROMPT = env_str('AI_SYSTEM_PROMPT',

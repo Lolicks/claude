@@ -91,17 +91,17 @@ nano .env              # вписать пароль, ключ ИИ и т.д.
    <https://openrouter.ai/models?max_price=0>
 2. Кликни по модели и скопируй её **id** — он вида `provider/model:free`.
 3. Примеры бесплатных моделей (список меняется — сверяйся со страницей выше):
-   - `deepseek/deepseek-chat-v3-0324:free`
+   - `z-ai/glm-4.5-air:free`
+   - `qwen/qwen3-coder:free`
    - `meta-llama/llama-3.3-70b-instruct:free`
-   - `google/gemini-2.0-flash-exp:free`
-   - `qwen/qwen-2.5-72b-instruct:free`
+   - `openai/gpt-oss-20b:free`
 4. Нюансы бесплатных моделей: есть ограничение по частоте запросов (rate limit), а для части
    моделей нужно один раз разрешить обработку данных в **Settings → Privacy** на OpenRouter.
 
 ### Шаг 3. Прописать в `.env`
 ```ini
 AI_PROVIDER=openrouter
-AI_MODEL=deepseek/deepseek-chat-v3-0324:free
+AI_MODEL=z-ai/glm-4.5-air:free
 AI_API_KEY=sk-or-v1-вставь_сюда_свой_ключ
 ```
 Модель можно менять в любой момент — просто поправь `AI_MODEL` на другой id.
